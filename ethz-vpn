@@ -1,31 +1,31 @@
 #!/bin/bash
 
 connect () {
-        read -sp $'Please type in your Encryption Password:\n' encpass
-        TOKEN=$(cat ~/.share/ethz-vpn-connect/ethzvpntoken.secret | openssl enc -aes-256-cbc -pbkdf2 -d -a -k $encpass)
-        PASSWORD=$(cat ~/.share/ethz-vpn-connect/ethzvpnpass.secret | openssl enc -aes-256-cbc -pbkdf2 -d -a -k $encpass)
-        USERNAME=$(cat ~/.share/ethz-vpn-connect/ethzvpnusername.txt)
-        echo $PASSWORD | sudo openconnect -b -u $USERNAME@student-net.ethz.ch -g student-net --useragent=AnyConnect --passwd-on-stdin --token-mode=totp --token-secret=sha1:base32:$TOKEN 
-sslvpn.ethz.ch
+        # read -sp $'Please type in your Encryption Password:\n' encpass
+        encpass='vpn'
+        TOKEN=$(sudo cat ~/secrets/ethzvpntoken.secret | openssl enc -aes-256-cbc -pbkdf2 -d -a -k $encpass)
+        PASSWORD=$(sudo cat ~/secrets/ethzvpnpass.secret | openssl enc -aes-256-cbc -pbkdf2 -d -a -k $encpass)
+        USERNAME=$(sudo cat ~/secrets/ethzvpnusername.txt)
+        echo $PASSWORD | sudo openconnect -q -b -u $USERNAME@student-net.ethz.ch -g student-net --useragent=AnyConnect --passwd-on-stdin --token-mode=totp --token-secret=sha1:base32:$TOKEN --disable-ipv6 sslvpn.ethz.ch > /dev/null 2>&1
         encpass=""
         PASSWORD=""
         TOKEN=""
 }
 
 disconnect () {
-        sudo killall -v -SIGINT openconnect #add -i option to ask for confirmation, usefull if running multible openconnect.
+        sudo killall -v -SIGINT openconnect > /dev/null # add -i option to ask for confirmation, usefull if running multible openconnect.
 }
 
 setup() {
         echo 'You are about to overwrite your secrets. Press ctrl + C to cancel.'
         read -sp $'Please type in your Username:\n' USERNAME
-        read -sp $'Please type in your Encryption Password:\n' encpass
+        # read -sp $'Please type in your Encryption Password:\n' encpass
+        encpass='vpn'
         read -sp $'Please type in your ETHZ WLAN Password:\n' PASSWORD
         read -sp $'Please type in your ETHZ OTP Secret:\n' TOKEN
-        mkdir ~/.share/ethz-vpn-connect
-        echo $PASSWORD | openssl enc -aes-256-cbc -pbkdf2 -a -k $encpass > ~/.share/ethz-vpn-connect/ethzvpnpass.secret
-        echo $TOKEN | openssl enc -aes-256-cbc -pbkdf2 -a -k $encpass > ~/.share/ethz-vpn-connect/ethzvpntoken.secret
-        echo $USERNAME > ~/.share/ethz-vpn-connect/ethzvpnusername.txt
+        echo $PASSWORD | openssl enc -aes-256-cbc -pbkdf2 -a -k $encpass | sudo tee ~/secrets/ethzvpnpass.secret > /dev/null
+        echo $TOKEN | openssl enc -aes-256-cbc -pbkdf2 -a -k $encpass | sudo tee ~/secrets/ethzvpntoken.secret > /dev/null
+        echo $USERNAME | sudo tee ~/secrets/ethzvpnusername.txt > /dev/null
         encpass=""
         PASSWORD=""
         TOKEN=""
